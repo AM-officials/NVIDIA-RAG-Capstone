@@ -1,150 +1,103 @@
-# 🤖 NVIDIA RAG Agent (LangChain + Gradio)
+# NVIDIA RAG Agent (LangChain + Gradio + FastAPI)
 
-A minimal **Retrieval-Augmented Generation (RAG)** pipeline using NVIDIA LLM endpoints, LangChain, and FAISS for intelligent document Q&A.
+A production-ready Retrieval-Augmented Generation (RAG) pipeline using NVIDIA endpoints, LangChain, and FAISS for intelligent document Q&A.
 
+## Features
 
-## ✨ Features
+- Document retrieval with FAISS semantic search
+- Grounded response generation with NVIDIA-hosted LLMs
+- Gradio chat interface for interactive Q&A
+- FastAPI wrapper with `GET /health` and `POST /ask`
+- Conversational memory for multi-turn follow-up questions
+- Basic evaluation metrics (latency and retrieved-doc count)
+- Source citations derived from retrieved document metadata
+- Optimized `/ask` flow that reuses retrieved docs for source titles (no duplicate retrieval call)
+- Reusable pre-built vector store for faster startup
 
-- **Document Retrieval**: Semantic search with FAISS vector store
-- **Contextual Generation**: NVIDIA Llama 3.1 70B for grounded responses
-- **Interactive UI**: Simple Gradio chat interface
-- **Citation Support**: Answers include source references
-- **Reusable Vector Store**: Pre-built vector store included for 4 research papers (saves ~2 min setup time)
+## Tech Stack
 
-## 🛠️ Tech Stack
+- LLM: NVIDIA AI Endpoints (`openai/gpt-oss-120b` in notebook)
+- Embeddings: NVIDIA `nvidia/nv-embed-v1`
+- Framework: LangChain (LCEL)
+- Vector Store: FAISS
+- Interfaces: Gradio + FastAPI
 
-- **LLM**: NVIDIA AI Endpoints (Llama 3.1 8B Instruct)
-- **Embeddings**: NVIDIA nv-embed-v1
-- **Framework**: LangChain
-- **Vector Store**: FAISS
-- **Interface**: Gradio
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
+
 - Python 3.8+
-- NVIDIA API Key ([Get one free](https://build.nvidia.com))
+- NVIDIA API key ([Get one free](https://build.nvidia.com))
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/rag-agent.git
-cd rag-agent
-
-# Install dependencies
+git clone https://github.com/AM-officials/NVIDIA-RAG-Capstone.git
+cd NVIDIA-RAG-Capstone
 pip install -r requirements.txt
-
-# Set your NVIDIA API key
-export NVIDIA_API_KEY="nvapi-your-key-here"
-
-# Run the notebook
-jupyter notebook RagAgent.ipynb
 ```
+
+Set your NVIDIA API key before running the notebook.
 
 ### Usage
 
-1. Open `RagAgent.ipynb` in Jupyter or Google Colab
-2. **Replace `YOUR_NVIDIA_API_KEY_HERE`** with your actual NVIDIA API key in cell 3
-3. **Choose one of two options:**
-   - **Option A (Fast)**: Run cell 7 to load the pre-built vector store (included in repo)
-   - **Option B (Fresh)**: Run cell 6 to create a new vector store from arXiv papers
-4. Continue running remaining cells to build the RAG pipeline
-5. Use the Gradio interface to ask questions!
+1. Open `RagAgent.ipynb` in Jupyter or VS Code notebooks.
+2. Set your NVIDIA API key in the environment setup cell.
+3. Load the pre-built vector store (fast path) or rebuild it from arXiv papers.
+4. Run the retrieval and generation chain cells.
+5. Test via the Gradio interface.
+6. Optionally run the FastAPI section to expose REST endpoints.
 
-**Example Queries:**
-- "What are the latest developments in large language models?"
-- "Explain retrieval-augmented generation"
-- "How do transformer architectures work?"
+## API Endpoints
 
-## ⚡ Performance Note
+After running the FastAPI cell in `RagAgent.ipynb`:
 
-**Vector Store Creation Time**: Creating embeddings for documents takes time. As shown below, processing just 4 research papers takes approximately **2 minutes**:
+- `GET /health`: Returns service status, model metadata, and vector count
+- `POST /ask`: Accepts `{ "question": "..." }` and returns:
+  - `question`
+  - `answer`
+  - `sources` (titles from retrieved docs)
+  - `response_time_ms`
 
-![Vector Store Creation Time](image.png)
+## How It Works
 
-**💡 Tip**: Use the pre-built `docstore_index.zip` included in this repo to skip the vectorization step and start immediately! As the number of papers increases, vectorization time grows linearly - making the reusable vector store essential for production use.
+1. Load papers and split into chunks.
+2. Embed chunks with `nvidia/nv-embed-v1`.
+3. Index embeddings in FAISS.
+4. Retrieval chain gets top-k docs, reorders context, and returns both formatted context and document objects.
+5. Generation chain streams grounded answers using retrieved context.
+6. `/ask` reuses already-retrieved documents to build source titles in one retrieval pass.
 
-## 📁 Project Structure
+## Project Structure
 
-```
+```text
 NVIDIA-RAG-Capstone/
-├── 📓 RagAgent.ipynb           # Main notebook with complete RAG pipeline
-├── 📄 README.md                # This file
-├── 📄 requirements.txt         # Python dependencies
-├── 📄 .gitignore              # Git ignore rules
-├── 📦 docstore_index.zip      # Pre-built vector store (4 papers)
-├── � docstore_index/         # Extracted vector store files
-│   ├── index.faiss            # FAISS index file
-│   └── index.pkl              # Document metadata
-└── 🖼️ image.png               # Performance benchmark screenshot
+├── RagAgent.ipynb
+├── README.md
+├── requirements.txt
+├── docstore_index.zip
+├── docstore_index/
+│   ├── index.faiss
+│   └── index.pkl
+└── anaconda_projects/
 ```
 
-## 🎯 How It Works
+## Example Questions
 
-1. **Document Loading**: Load research papers from arXiv (or use pre-built vector store)
-2. **Embedding**: Convert documents to vectors using NVIDIA embeddings
-3. **Indexing**: Store embeddings in FAISS for fast retrieval
-4. **Query Processing**: User query → Retrieve relevant docs → Generate answer
-5. **Response**: LLM generates contextual answer with citations
+- What are the latest developments in large language models?
+- Explain retrieval-augmented generation.
+- What are the key innovations in Llama 2?
 
-**Included Papers** (in pre-built vector store):
-- RAG: Retrieval-Augmented Generation (2005.11401)
-- Attention Is All You Need - Transformers (1706.03762)
-- GPT-4 Technical Report (2304.08485)
-- Llama 2 Paper (2307.09288)
+## Future Enhancements
 
-## 🔧 Configuration
+- Hybrid retrieval (dense + sparse)
+- API authentication and rate limiting
+- Persistent memory backend (Redis/Postgres)
+- Managed vector database for larger corpora
+- Multimodal document support
 
-Customize models and papers in the notebook:
+## Acknowledgments
 
-```python
-# Embedding model
-embedder = NVIDIAEmbeddings(model="nvidia/nv-embed-v1")
-
-# LLM model (choose one)
-llm = ChatNVIDIA(model="meta/llama-3.1-70b-instruct")  # Powerful
-# llm = ChatNVIDIA(model="meta/llama-3.1-8b-instruct")  # Faster
-
-# Add more arXiv papers (in cell 6)
-arxiv_ids = [
-    "2005.11401",  # Your paper ID here
-    "1706.03762",  # Add as many as needed
-]
-
-# Retrieval parameters
-retriever = docstore.as_retriever(search_kwargs={'k': 5})
-```
-embedder = NVIDIAEmbeddings(model="nvidia/nv-embed-v1")
-
-# LLM model
-llm = ChatNVIDIA(model="meta/llama-3.1-8b-instruct")
-
-# Retrieval parameters
-retriever = docstore.as_retriever(search_kwargs={'k': 5})
-```
-
-## 📊 Sample Output
-
-**Query**: "What is retrieval-augmented generation?"
-
-**Response**: "According to [Paper Title], Retrieval-Augmented Generation (RAG) is a technique that enhances language model outputs by incorporating relevant documents from a knowledge base..."
-
-## � Future Enhancements
-
-- [ ] Add conversational memory for multi-turn dialogue
-- [ ] Implement hybrid search (dense + sparse)
-- [ ] Support multi-modal documents (images, tables)
-- [ ] Add evaluation metrics (precision, recall)
-- [ ] Deploy as web service
-
-
-## 🙏 Acknowledgments
-
-- **NVIDIA** for AI endpoints
-- **LangChain** for the orchestration framework
-- **FAISS** for vector search
-
----
-
-**Built with ❤️ for the AI community**
+- NVIDIA for model and embedding endpoints
+- LangChain for orchestration primitives
+- FAISS for efficient vector search
