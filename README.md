@@ -138,9 +138,6 @@ retriever = docstore.as_retriever(search_kwargs={'k': 5})
 - [ ] Add evaluation metrics (precision, recall)
 - [ ] Deploy as web service
 
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
